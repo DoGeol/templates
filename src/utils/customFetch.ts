@@ -1,5 +1,20 @@
-export const customFetch = ({}: any) => {
-  return fetch("", {});
+import { ErrorType, ResponseType } from "./customFetchType";
+
+export const customFetch = async <T>(
+  url: string,
+  options?: RequestInit
+): Promise<ResponseType<T>> => {
+  try {
+    const response = await fetch(url, { ...options });
+    if (!response.ok) {
+      const { error } = await response.json();
+      throw error as ErrorType;
+    }
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    throw e as ErrorType;
+  }
 };
 
 /** 

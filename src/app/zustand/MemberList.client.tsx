@@ -1,5 +1,7 @@
 "use client";
 
+import { customFetch } from "@/utils/customFetch";
+import { ErrorType } from "@/utils/customFetchType";
 import { useEffect, useState } from "react";
 
 type TMember = {
@@ -15,20 +17,35 @@ export default function MemberList() {
   useEffect(() => {
     console.log("useEffect");
     async function fetchMembers() {
-      const response = await fetch("/api/member", {
-        method: "GET",
-        headers: new Headers({
-          "Content-Type": "application/json",
-          // "custom-error-status": "true",
-          // "time-out-value" : '3000'
-        }),
-      });
+      // const response = await fetch("/api/member", {
+      //   method: "GET",
+      //   headers: new Headers({
+      //     "Content-Type": "application/json",
+      //     // "custom-error-status": "true",
+      //     // "time-out-value" : '3000'
+      //   }),
+      // });
 
+      // try {
+      //   const { contents } = await response.json();
+      //   setMembers(contents || []);
+      // } catch (e) {
+      //   console.log(e);
+      // }
+  
       try {
-        const { contents } = await response.json();
-        setMembers(contents || []);
+        const res = await customFetch<TMember[]>("/api/member", {
+          headers: new Headers({
+            "Content-Type": "application/json",
+            "custom-error-status": "true",
+            // "time-out-value": "3000",
+          }),
+        });
+        console.log(res.contents);
+        setMembers(res.contents || []);
       } catch (e) {
-        console.log(e);
+        const error = e as ErrorType;
+        alert(`[${error.code}] :: ${error.message}`);
       }
     }
     fetchMembers();
