@@ -1,50 +1,47 @@
-export const customFetch = ({}: any) => {
-  return fetch("", {});
+type CustomFetchOptions = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  headers?: Record<string, string>;
+  params?: Record<string, string | number | boolean>;
+  body?: Record<string, string | number | boolean>;
 };
 
-/** 
- * 1차 : customFetch에 Method로 GET/POST를 던져서 값을 가져올수있게 만들기   
- * - 조건1 : 제네릭을 사용하여 ResponseType을 전달해서 가져오는 값을 받아오게 만들기
-/* 
+export const customFetch = async <T>(
+  url: string,
+  options: CustomFetchOptions
+): Promise<T> => {
+  const method = options.method.toUpperCase();
+  let fullUrl = url;
+  let fetchBody = options.body;
 
-type ResponseType = {}
+  if (method === "GET" || method === "DELETE") {
+    if (options.params) {
+      const queryString = new URLSearchParams(
+        Object.entries(options.params).reduce((acc, [key, val]) => {
+          acc[key] = String(val);
+          return acc;
+        }, {} as Record<string, string>)
+      ).toString();
+      fullUrl += `?${queryString}`;
+    }
+  } else {
+    fetchBody = options.body ?? options.params;
+  }
 
-const getMemberList = customFetch<ResponseType>("/api/members", {
-    method: "GET",
-    header: {},
-});
-
-const getMemberDetail = customFetch<ResponseType>("/api/member", {
-    method: "GET",
-    header: {},
-    params: {
-        id: 1   
+  const response = await fetch(fullUrl, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
     },
-});
+    body:
+      method === "GET" || method === "DELETE"
+        ? undefined
+        : JSON.stringify(fetchBody),
+  });
 
-const response = async getMemberList()
-console.log(response) 
-// {
-//     "id": 1,
-//     "name": "이지현
-//     .... 
-// }
+  if (!response.ok) {
+    throw new Error(`서버 응답 오류: ${response.status}`);
+  }
 
-
-const updateMember = customFetch<ResponseType>("/api/member", {
-    method: "POST",
-    header: {},
-    data: {},
-});
-
-const response = async updateMember(id:1 ,data: {
-    name: '이지현'
-})
-console.log(response) 
-// {
-//     "id": 1,
-//     "name": "이지현
-//     .... 
-// }
-
-*/
+  return await response.json();
+};
